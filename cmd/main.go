@@ -6,13 +6,16 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	env "github.com/monstrasitix/swa/config"
+	"github.com/monstrasitix/swa/config"
 )
 
-func main() {
-	env.LoadDev()
+func init() {
+	config.LoadDev()
+}
 
-	addr := ":" + env.GetPort()
+func main() {
+	addr := ":" + config.GetPort()
+	tmpl := *config.NewTemplate()
 
 	router := mux.NewRouter()
 	server := http.Server{
@@ -20,8 +23,13 @@ func main() {
 		Handler: router,
 	}
 
-	router.PathPrefix("/").
-		Handler(http.FileServer(http.Dir("./public/")))
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl.Render(w, "home.html", nil)
+	}).Methods(http.MethodGet)
+
+	router.HandleFunc("/contact", func(w http.ResponseWriter, r *http.Request) {
+		tmpl.Render(w, "contact.html", nil)
+	}).Methods(http.MethodGet)
 
 	fmt.Println("Listening on: http://localhost" + addr)
 	log.Fatal(server.ListenAndServe())
